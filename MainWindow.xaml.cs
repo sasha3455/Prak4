@@ -1,250 +1,147 @@
-﻿using System;
-using System.Globalization;
+using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Globalization;
 
 namespace ScientificCalculator
 {
     public partial class MainWindow : Window
     {
-        private StringBuilder expressionBuilder = new StringBuilder();
-        private bool newInputExpected = false;
-        private bool displayError = false;
-        private double lastResult = 0;
-        private string lastOperation = "";
-        private bool isPowerOperation = false;
-        private double powerBase = 0;
-        private bool isBracketOpen = false;
+        private const string InitialDisplayValue = "0";
+        private const string ErrorDisplayText = "Error";
+
+        private readonly StringBuilder _expressionBuilder = new();
+        private double _lastResult;
+        private string _lastOperation = string.Empty;
+        private double _powerBase;
+        private bool _newInputExpected;
+        private bool _displayError;
+        private bool _isPowerOperation;
+        private bool _isBracketOpen;
 
         public MainWindow()
         {
             InitializeComponent();
-            ClearAll();
+            InitializeCalculator();
         }
 
-        private void ClearAll()
+        #region Инициализация и сброс
+        private void InitializeCalculator()
         {
-            expressionBuilder.Clear();
-            newInputExpected = false;
-            displayError = false;
-            lastResult = 0;
-            lastOperation = "";
-            isPowerOperation = false;
-            powerBase = 0;
-            isBracketOpen = false;
-            ExpressionTextBlock.Text = "";
-            ResultTextBlock.Text = "0";
+            ResetAll();
         }
 
-        private void ClearEntry()
+        private void ResetAll()
         {
-            ResultTextBlock.Text = "0";
-            newInputExpected = false;
+            _expressionBuilder.Clear();
+            _lastResult = 0;
+            _lastOperation = string.Empty;
+            _powerBase = 0;
+            _newInputExpected = false;
+            _displayError = false;
+            _isPowerOperation = false;
+            _isBracketOpen = false;
+
+            UpdateDisplay(InitialDisplayValue);
+            ClearExpression();
         }
 
-        private void AddToExpression(string value)
+        private void ResetEntry()
         {
-            if (displayError)
-            {
-                expressionBuilder.Clear();
-                displayError = false;
-            }
-            expressionBuilder.Append(value);
-            ExpressionTextBlock.Text = expressionBuilder.ToString();
+            UpdateDisplay(InitialDisplayValue);
+            _newInputExpected = false;
         }
+        #endregion
 
+        #region Обработчики событий
         private void DigitButton_Click(object sender, RoutedEventArgs e)
         {
-            if (displayError) ClearAll();
+            if (_displayError) ResetAll();
 
-            var button = (Button)sender;
-            string digit = button.Content.ToString();
+            var digit = ((Button)sender).Content.ToString() ?? string.Empty;
 
-            if (newInputExpected)
+            if (_newInputExpected)
             {
                 if (ExpressionTextBlock.Text.EndsWith("="))
                 {
-                    expressionBuilder.Clear();
-                    ExpressionTextBlock.Text = "";
+                    ClearExpression();
                 }
-                ResultTextBlock.Text = digit;
-                newInputExpected = false;
+                UpdateDisplay(digit);
+                _newInputExpected = false;
             }
             else
             {
-                if (ResultTextBlock.Text == "0")
-                    ResultTextBlock.Text = digit;
-                else
-                    ResultTextBlock.Text += digit;
+                UpdateDisplay(DisplayText == InitialDisplayValue ? digit : DisplayText + digit);
             }
         }
 
         private void OperatorButton_Click(object sender, RoutedEventArgs e)
         {
-            if (displayError) ClearAll();
+            if (_displayError) ResetAll();
 
-            var button = (Button)sender;
-            string operation = button.Content.ToString();
+            var operation = ((Button)sender).Content.ToString() ?? string.Empty;
 
-            if (operation == "(")
+            if (operation == "(" || operation == ")")
             {
-                isBracketOpen = true;
-                AddToExpression("(");
-                newInputExpected = true;
-                return;
-            }
-            else if (operation == ")")
-            {
-                if (!isBracketOpen) return;
-
-                AddToExpression(ResultTextBlock.Text + ")");
-                isBracketOpen = false;
-                newInputExpected = true;
+                HandleBrackets(operation);
                 return;
             }
 
             try
             {
-                double currentValue = double.Parse(ResultTextBlock.Text, CultureInfo.InvariantCulture);
+                var currentValue = ParseDisplayValue();
 
                 if (ExpressionTextBlock.Text.EndsWith("="))
                 {
-                    expressionBuilder.Clear();
-                    expressionBuilder.Append(lastResult);
-                    lastOperation = operation;
-                    AddToExpression($" {operation} ");
-                    newInputExpected = true;
-                    return;
+                    _expressionBuilder.Clear();
+                    _expressionBuilder.Append(_lastResult);
                 }
 
-                if (!string.IsNullOrEmpty(lastOperation))
+                if (!string.IsNullOrEmpty(_lastOperation))
                 {
-                    CalculateResult();
+                    CalculateResult(currentValue);
                 }
                 else
                 {
-                    lastResult = currentValue;
+                    _lastResult = currentValue;
                 }
 
-                lastOperation = operation;
-                AddToExpression($"{lastResult} {operation} ");
-                newInputExpected = true;
+                _lastOperation = operation;
+                UpdateExpression($"{_lastResult} {operation} ");
+                _newInputExpected = true;
             }
             catch (Exception ex)
             {
-                HandleError(ex.Message);
-            }
-        }
-
-        private void CalculateResult()
-        {
-            try
-            {
-                double currentValue = double.Parse(ResultTextBlock.Text, CultureInfo.InvariantCulture);
-
-                switch (lastOperation)
-                {
-                    case "+":
-                        lastResult += currentValue;
-                        break;
-                    case "-":
-                        lastResult -= currentValue;
-                        break;
-                    case "*":
-                        lastResult *= currentValue;
-                        break;
-                    case "/":
-                        if (currentValue == 0) throw new DivideByZeroException();
-                        lastResult /= currentValue;
-                        break;
-                    case "^":
-                        lastResult = Math.Pow(lastResult, currentValue);
-                        break;
-                }
-
-                ResultTextBlock.Text = lastResult.ToString(CultureInfo.InvariantCulture);
-            }
-            catch (Exception ex)
-            {
-                HandleError(ex.Message);
+                ShowError(ex.Message);
             }
         }
 
         private void FunctionButton_Click(object sender, RoutedEventArgs e)
         {
-            if (displayError) ClearAll();
+            if (_displayError) ResetAll();
 
-            var button = (Button)sender;
-            string function = button.Content.ToString();
+            var function = ((Button)sender).Content.ToString() ?? string.Empty;
 
-            if (function == "x^y")
+try
             {
-                try
+                switch (function)
                 {
-                    powerBase = double.Parse(ResultTextBlock.Text, CultureInfo.InvariantCulture);
-                    isPowerOperation = true;
-                    AddToExpression($"{powerBase}^");
-                    newInputExpected = true;
-                    return;
+                    case "x^y":
+                        HandlePowerOperation();
+                        return;
+                    case "n!":
+                        HandleFactorial();
+                        return;
+                    default:
+                        HandleMathFunction(function);
+                        break;
                 }
-                catch (Exception ex)
-                {
-                    HandleError(ex.Message);
-                    return;
-                }
-            }
-
-            if (function == "n!")
-            {
-                try
-                {
-                    int value = (int)double.Parse(ResultTextBlock.Text, CultureInfo.InvariantCulture);
-                    double result = Factorial(value);
-                    ResultTextBlock.Text = result.ToString(CultureInfo.InvariantCulture);
-                    AddToExpression($"{value}!");
-                    newInputExpected = true;
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    HandleError(ex.Message);
-                    return;
-                }
-            }
-
-            try
-            {
-                double value = double.Parse(ResultTextBlock.Text, CultureInfo.InvariantCulture);
-                double result = CalculateFunction(value, function);
-
-                ResultTextBlock.Text = result.ToString(CultureInfo.InvariantCulture);
-                AddToExpression($"{function}({value})");
-                newInputExpected = true;
             }
             catch (Exception ex)
             {
-                HandleError(ex.Message);
-            }
-        }
-
-        private double CalculateFunction(double value, string function)
-        {
-            switch (function)
-            {
-                case "sin": return Math.Sin(value * Math.PI / 180);
-                case "cos": return Math.Cos(value * Math.PI / 180);
-                case "tg": return Math.Tan(value * Math.PI / 180);
-                case "x^2": return Math.Pow(value, 2);
-                case "1/x": return value == 0 ? throw new DivideByZeroException() : 1 / value;
-                case "|x|": return Math.Abs(value);
-                case "2√x": return Math.Sqrt(value);
-                case "π": return Math.PI;
-                case "e": return Math.E;
-                case "10^x": return Math.Pow(10, value);
-                case "log": return Math.Log10(value);
-                case "ln": return Math.Log(value);
-                default: return value;
+                ShowError(ex.Message);
             }
         }
 
@@ -252,84 +149,206 @@ namespace ScientificCalculator
         {
             try
             {
-                if (isPowerOperation)
+                if (_isPowerOperation)
                 {
-                    double exponent = double.Parse(ResultTextBlock.Text, CultureInfo.InvariantCulture);
-                    double result = Math.Pow(powerBase, exponent);
-                    ExpressionTextBlock.Text = $"{powerBase}^{exponent} =";
-                    ResultTextBlock.Text = result.ToString(CultureInfo.InvariantCulture);
-                    isPowerOperation = false;
-                    powerBase = 0;
-                    newInputExpected = true;
-                    lastResult = result;
+                    CompletePowerOperation();
                     return;
                 }
 
-                if (!string.IsNullOrEmpty(lastOperation))
+                if (!string.IsNullOrEmpty(_lastOperation))
                 {
-                    string expression = expressionBuilder.ToString() + ResultTextBlock.Text;
-                    CalculateResult();
-                    ExpressionTextBlock.Text = $"{expression} =";
-                    newInputExpected = true;
+                    CompleteStandardOperation();
                 }
-                else if (isBracketOpen)
+                else if (_isBracketOpen)
                 {
-                    ExpressionTextBlock.Text = expressionBuilder.ToString() + ResultTextBlock.Text + ")";
-                    isBracketOpen = false;
-                    newInputExpected = true;
+                    CompleteBracketOperation();
                 }
             }
             catch (Exception ex)
             {
-                HandleError(ex.Message);
+                ShowError(ex.Message);
             }
         }
 
-        private double Factorial(int n)
-        {
-            if (n < 0) throw new ArgumentException("Factorial of negative number is undefined");
-            if (n > 170) throw new ArgumentException("Value too large for factorial calculation");
-            if (n == 0) return 1;
-
-            double result = 1;
-            for (int i = 2; i <= n; i++)
-            {
-                result *= i;
-            }
-            return result;
-        }
-
-        private void HandleError(string message)
-        {
-            ResultTextBlock.Text = "Error";
-            ExpressionTextBlock.Text = message;
-            displayError = true;
-        }
-
-        private void ClearButton_Click(object sender, RoutedEventArgs e) => ClearAll();
-        private void ClearEntryButton_Click(object sender, RoutedEventArgs e) => ClearEntry();
+        private void ClearButton_Click(object sender, RoutedEventArgs e) => ResetAll();
+        private void ClearEntryButton_Click(object sender, RoutedEventArgs e) => ResetEntry();
 
         private void DecimalPointButton_Click(object sender, RoutedEventArgs e)
         {
-            if (newInputExpected)
+            if (_newInputExpected)
             {
-                ResultTextBlock.Text = "0.";
-                newInputExpected = false;
+                UpdateDisplay("0.");
+                _newInputExpected = false;
             }
-            else if (!ResultTextBlock.Text.Contains("."))
+            else if (!DisplayText.Contains("."))
             {
-                ResultTextBlock.Text += ".";
+                UpdateDisplay(DisplayText + ".");
             }
         }
 
         private void SignChangeButton_Click(object sender, RoutedEventArgs e)
         {
-            if (ResultTextBlock.Text != "0")
+            if (DisplayText != InitialDisplayValue)
             {
-                ResultTextBlock.Text = ResultTextBlock.Text.StartsWith("-")
-                    ? ResultTextBlock.Text.Substring(1)
-                    : "-" + ResultTextBlock.Text;
+                UpdateDisplay(DisplayText.StartsWith("-")
+                    ? DisplayText[1..]
+                    : "-" + DisplayText);
             }
         }
+        #endregion
+
+        #region Логика операций
+        private void HandleBrackets(string bracket)
+        {
+            if (bracket == "(")
+            {
+                _isBracketOpen = true;
+                UpdateExpression("(");
+            }
+            else if (_isBracketOpen)
+            {
+                UpdateExpression(DisplayText + ")");
+                _isBracketOpen = false;
+            }
+            _newInputExpected = true;
+        }
+
+        private void HandlePowerOperation()
+        {
+            _powerBase = ParseDisplayValue();
+            _isPowerOperation = true;
+            UpdateExpression($"{_powerBase}^");
+            _newInputExpected = true;
+        }
+
+        private void HandleFactorial()
+        {
+            var value = (int)ParseDisplayValue();
+            var result = CalculateFactorial(value);
+            UpdateDisplay(result.ToString(CultureInfo.InvariantCulture));
+            UpdateExpression($"{value}!");
+            _newInputExpected = true;
+        }
+
+        private void HandleMathFunction(string function)
+        {
+            var value = ParseDisplayValue();
+            var result = CalculateMathFunction(value, function);
+            UpdateDisplay(result.ToString(CultureInfo.InvariantCulture));
+            UpdateExpression($"{function}({value})");
+            _newInputExpected = true;
+        }
+
+        private void CompletePowerOperation()
+        {
+            var exponent = ParseDisplayValue();
+            var result = Math.Pow(_powerBase, exponent);
+            UpdateExpression($"{_powerBase}^{exponent} =");
+            UpdateDisplay(result.ToString(CultureInfo.InvariantCulture));
+            _isPowerOperation = false;
+            _powerBase = 0;
+            _newInputExpected = true;
+            _lastResult = result;
+        }
+
+private void CompleteStandardOperation()
+        {
+            var expression = _expressionBuilder + DisplayText;
+            CalculateResult(ParseDisplayValue());
+            UpdateExpression($"{expression} =");
+            _newInputExpected = true;
+        }
+
+        private void CompleteBracketOperation()
+        {
+            UpdateExpression(_expressionBuilder + DisplayText + ")");
+            _isBracketOpen = false;
+            _newInputExpected = true;
+        }
+        #endregion
+
+        #region Вычислительные методы
+        private void CalculateResult(double currentValue)
+        {
+            _lastResult = _lastOperation switch
+            {
+                "+" => _lastResult + currentValue,
+                "-" => _lastResult - currentValue,
+                "*" => _lastResult * currentValue,
+                "/" => currentValue == 0 ? throw new DivideByZeroException() : _lastResult / currentValue,
+                "^" => Math.Pow(_lastResult, currentValue),
+                _ => _lastResult
+            };
+
+            UpdateDisplay(_lastResult.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private double CalculateMathFunction(double value, string function)
+        {
+            return function switch
+            {
+                "sin" => Math.Sin(value * Math.PI / 180),
+                "cos" => Math.Cos(value * Math.PI / 180),
+                "tg" => Math.Tan(value * Math.PI / 180),
+                "x^2" => Math.Pow(value, 2),
+                "1/x" => value == 0 ? throw new DivideByZeroException() : 1 / value,
+                "|x|" => Math.Abs(value),
+                "2√x" => Math.Sqrt(value),
+                "π" => Math.PI,
+                "e" => Math.E,
+                "10^x" => Math.Pow(10, value),
+                "log" => Math.Log10(value),
+                "ln" => Math.Log(value),
+                _ => value
+            };
+        }
+
+        private static double CalculateFactorial(int n)
+        {
+            if (n < 0) throw new ArgumentException("Factorial of negative number is undefined");
+            if (n > 170) throw new ArgumentException("Value too large for factorial calculation");
+
+            double result = 1;
+            for (int i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+        #endregion
+
+        #region Вспомогательные методы
+        private double ParseDisplayValue()
+        {
+            return double.Parse(DisplayText, CultureInfo.InvariantCulture);
+        }
+
+        private void UpdateDisplay(string value)
+        {
+            ResultTextBlock.Text = value;
+        }
+
+        private void UpdateExpression(string value)
+        {
+            if (_displayError)
+            {
+                _expressionBuilder.Clear();
+                _displayError = false;
+            }
+            _expressionBuilder.Append(value);
+            ExpressionTextBlock.Text = _expressionBuilder.ToString();
+        }
+
+        private void ClearExpression()
+        {
+            ExpressionTextBlock.Text = string.Empty;
+        }
+
+        private void ShowError(string message)
+        {
+            UpdateDisplay(ErrorDisplayText);
+            ExpressionTextBlock.Text = message;
+            _displayError = true;
+        }
+
+        private string DisplayText => ResultTextBlock.Text;
+        #endregion
     }
 }
