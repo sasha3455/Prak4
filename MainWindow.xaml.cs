@@ -27,7 +27,6 @@ namespace ScientificCalculator
             InitializeCalculator();
         }
 
-        #region Инициализация и сброс
         private void InitializeCalculator()
         {
             ResetAll();
@@ -53,9 +52,7 @@ namespace ScientificCalculator
             UpdateDisplay(InitialDisplayValue);
             _newInputExpected = false;
         }
-        #endregion
 
-        #region Обработчики событий
         private void DigitButton_Click(object sender, RoutedEventArgs e)
         {
             if (_displayError) ResetAll();
@@ -195,9 +192,6 @@ try
                     : "-" + DisplayText);
             }
         }
-        #endregion
-
-        #region Логика операций
         private void HandleBrackets(string bracket)
         {
             if (bracket == "(")
@@ -251,6 +245,7 @@ try
             _lastResult = result;
         }
 
+
 private void CompleteStandardOperation()
         {
             var expression = _expressionBuilder + DisplayText;
@@ -265,9 +260,7 @@ private void CompleteStandardOperation()
             _isBracketOpen = false;
             _newInputExpected = true;
         }
-        #endregion
-
-        #region Вычислительные методы
+        
         private void CalculateResult(double currentValue)
         {
             _lastResult = _lastOperation switch
@@ -312,9 +305,7 @@ private void CompleteStandardOperation()
             for (int i = 2; i <= n; i++) result *= i;
             return result;
         }
-        #endregion
-
-        #region Вспомогательные методы
+        
         private double ParseDisplayValue()
         {
             return double.Parse(DisplayText, CultureInfo.InvariantCulture);
@@ -349,6 +340,5 @@ private void CompleteStandardOperation()
         }
 
         private string DisplayText => ResultTextBlock.Text;
-        #endregion
     }
 }
