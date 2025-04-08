@@ -1,44 +1,40 @@
-﻿<Window x:Class="ScientificCalculator.MainWindow"
+<Window x:Class="ScientificCalculator.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ScientificCalculator"
         mc:Ignorable="d"
-        Title="Scientific Calculator" Height="450" Width="400">
+        Title="Scientific Calculator (Поставьте 5!)" Height="450" Width="400">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
+            <RowDefinition></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
         </Grid.ColumnDefinitions>
 
-        <TextBlock x:Name="ExpressionTextBlock" Grid.Row="0" Grid.ColumnSpan="5" 
-                  Margin="5" TextAlignment="Right" FontSize="16"
-                  HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBlock x:Name="ExpressionTextBlock" Grid.Row="0" Grid.ColumnSpan="5" Margin="5" TextAlignment="Right" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-        <TextBlock x:Name="ResultTextBlock" Grid.Row="1" Grid.ColumnSpan="5" 
-                  Margin="5" TextAlignment="Right" FontSize="24"
-                  HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        <TextBlock x:Name="ResultTextBlock" Grid.Row="1" Grid.ColumnSpan="5" Margin="5" TextAlignment="Right" FontSize="24" HorizontalAlignment="Right" VerticalAlignment="Center"/>
 
-        <Button Content="sin" Grid.Column="0" Grid.Row="2" Click="FunctionButton_Click"/>
-        <Button Content="π" Grid.Column="1" Grid.Row="2" Click="FunctionButton_Click"/>
+        <Button Content="sin" Grid.Column="0" Grid.Row="2"  Click="FunctionButton_Click"/>
+        <Button Content="П" Grid.Column="1" Grid.Row="2"  Click="FunctionButton_Click"/>
         <Button Content="e" Grid.Column="2" Grid.Row="2" Click="FunctionButton_Click"/>
-        <Button Content="CE" Grid.Column="3" Grid.Row="2" Click="ClearButton_Click"/>
-        <Button Content="C" Grid.Column="4" Grid.Row="2" Click="ClearEntryButton_Click"/>
+        <Button Content="CE" Grid.Column="3" Grid.Row="2"  Click="ClearButton_Click"/>
+        <Button Content="C" Grid.Column="4" Grid.Row="2"  Click="ClearEntryButton_Click"/>
 
         <Button Content="x^2" Grid.Column="0" Grid.Row="3" Click="FunctionButton_Click"/>
         <Button Content="1/x" Grid.Column="1" Grid.Row="3" Click="FunctionButton_Click"/>
@@ -46,7 +42,7 @@
         <Button Content="cos" Grid.Column="3" Grid.Row="3" Click="FunctionButton_Click"/>
         <Button Content="tg" Grid.Column="4" Grid.Row="3" Click="FunctionButton_Click"/>
 
-        <Button Content="2√x" Grid.Column="0" Grid.Row="4" Click="FunctionButton_Click"/>
+        <Button Content="sqrt" Grid.Column="0" Grid.Row="4" Click="FunctionButton_Click"/>
         <Button Content="(" Grid.Column="1" Grid.Row="4" Click="OperatorButton_Click"/>
         <Button Content=")" Grid.Column="2" Grid.Row="4" Click="OperatorButton_Click"/>
         <Button Content="n!" Grid.Column="3" Grid.Row="4" Click="FunctionButton_Click"/>
